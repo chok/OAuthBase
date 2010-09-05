@@ -1102,9 +1102,26 @@ abstract class sfOAuth
 
     foreach($fields as $field)
     {
-      if(isset($result->$field))
+      if(is_object($result) && isset($result->$field))
       {
         $result = $result->$field;
+      }
+      elseif(is_array($result))
+      {
+        if(is_numeric($field))
+        {
+          $field = intval($field);
+        }
+
+        if(isset($result[$field]))
+        {
+          $result = $result[$field];
+        }
+        else
+        {
+          $result = null;
+          break;
+        }
       }
       else
       {
