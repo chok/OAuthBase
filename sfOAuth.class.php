@@ -141,6 +141,20 @@ abstract class sfOAuth
     $this->setToken($token);
     $this->setConfig($config);
 
+    $this->init($config, 'callback');
+    $this->init($config, 'request_auth_url');
+    $this->init($config, 'access_token_url');
+    $this->init($config, 'namespaces');
+    $this->init($config, 'current_namespace');
+    $this->init($config, 'controller');
+    $this->init($config, 'name');
+    $this->init($config, 'callback');
+    $this->init($config, 'auth_parameters', 'add');
+    $this->init($config, 'call_parameters', 'add');
+    $this->init($config, 'access_parameters', 'add');
+    $this->init($config, 'aliases', 'add');
+    $this->init($config, 'output_format');
+
     $this->initialize($config);
   }
 
@@ -174,19 +188,7 @@ abstract class sfOAuth
    */
   protected function initialize($config)
   {
-    $this->init($config, 'callback');
-    $this->init($config, 'request_auth_url');
-    $this->init($config, 'access_token_url');
-    $this->init($config, 'namespaces');
-    $this->init($config, 'current_namespace');
-    $this->init($config, 'controller');
-    $this->init($config, 'name');
-    $this->init($config, 'callback');
-    $this->init($config, 'auth_parameters', 'add');
-    $this->init($config, 'call_parameters', 'add');
-    $this->init($config, 'access_parameters', 'add');
-    $this->init($config, 'aliases', 'add');
-    $this->init($config, 'output_format');
+
   }
 
   /**

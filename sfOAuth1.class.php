@@ -48,12 +48,6 @@ class sfOAuth1 extends sfOAuth
     $this->init($config, 'request_parameters', 'add');
   }
 
-  //nothing to initialize
-  protected function initialize($config)
-  {
-    parent::initialize($config);
-  }
-
   /**
    * getter $consumer
    *

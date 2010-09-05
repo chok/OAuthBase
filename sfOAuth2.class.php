@@ -25,15 +25,6 @@ class sfOAuth2 extends sfOAuth
 
   /**
    * (non-PHPdoc)
-   * @see plugins/sfDoctrineOAuthPlugin/lib/sfOAuth::initialize()
-   */
-  protected function initialize($config)
-  {
-    parent::initialize($config);
-  }
-
-  /**
-   * (non-PHPdoc)
    * @see plugins/sfDoctrineOAuthPlugin/lib/sfOAuth::requestAuth()
    */
   public function requestAuth($parameters = array())
