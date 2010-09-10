@@ -192,6 +192,20 @@ abstract class sfOAuth
   }
 
   /**
+   *
+   * @param Token $token
+   *
+   * Initialize when token is set
+   *
+   * @author Maxime Picaud
+   * @since 10 sept. 2010
+   */
+  protected function initializeFromToken($token)
+  {
+
+  }
+
+  /**
    * implemented by child classes to request auth
    *
    * @author Maxime Picaud
@@ -351,6 +365,8 @@ abstract class sfOAuth
   public function setToken($token)
   {
     $this->token = $token;
+
+    $this->initializeFromToken($token);
   }
 
   public function getConfigParameter($key, $default = null)
