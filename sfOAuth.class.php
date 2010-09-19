@@ -1042,14 +1042,19 @@ abstract class sfOAuth
   {
     $ci = curl_init();
 
+    if(is_array($params) && count($params) > 0)
+    {
+      $params = http_build_query($params);
+    }
+
     if($method == 'POST')
     {
+
       curl_setopt($ci, CURLOPT_POST, true);
       curl_setopt($ci, CURLOPT_POSTFIELDS, $params);
     }
-    elseif($method == 'GET' && count($params) > 0)
+    elseif($method == 'GET' && !empty($params))
     {
-      $params = http_build_query($params);
       if(strpos($url, '?') !== false)
       {
         $url .= '&'.$params;
@@ -1194,7 +1199,7 @@ abstract class sfOAuth
     return $this->applyUrlParams($url, $aliases);
   }
 
-  public function fromPath($result, $path)
+  public function fromPath($result, $path, $default = null)
   {
     $fields = explode('.', $path);
 
@@ -1217,13 +1222,13 @@ abstract class sfOAuth
         }
         else
         {
-          $result = null;
+          $result = $default;
           break;
         }
       }
       else
       {
-        $result = null;
+        $result = $default;
         break;
       }
     }
