@@ -34,8 +34,26 @@ class sfOAuth2 extends sfOAuth
       $this->setAuthParameter('client_id', $this->getKey());
       $this->setAuthParameter('redirect_uri', $this->getCallback());
       $this->addAuthParameters($parameters);
+      $url = $this->getRequestAuthUrl().'?'.http_build_query($this->getAuthParameters());
 
-      $this->getController()->redirect($this->getRequestAuthUrl().'?'.http_build_query($this->getAuthParameters()));
+      if($this->getLogger())
+      {
+        $this->getLogger()->info(sprintf('{OAuth} "%s" call url "%s" with params "%s"',
+                                         $this->getName(),
+                                         $this->getRequestAuthUrl(),
+                                         var_export($this->getAuthParameters(), true)
+                                        )
+                                 );
+      }
+
+      $this->getController()->redirect($url);
+    }
+    else
+    {
+      if($this->getLogger())
+      {
+        $this->getLogger()->err(sprintf('{OAuth} "%s" no controller to execute the request', $this->getName()));
+      }
     }
   }
 
@@ -60,10 +78,15 @@ class sfOAuth2 extends sfOAuth
 
     $access_token = isset($params['access_token'])?$params['access_token']:null;
 
-    if(is_null($access_token))
+    if(is_null($access_token) && $this->getLogger())
     {
       $error = sprintf('{OAuth} access token failed - %s returns %s', $this->getName(), print_r($params, true));
-      sfContext::getInstance()->getLogger()->err($error);
+      $this->getLogger()->err($error);
+    }
+    elseif($this->getLogger())
+    {
+      $message = sprintf('{OAuth} %s return %s', $this->getName(), print_r($params, true));
+      $this->getLogger()->info($message);
     }
 
     $token = new Token();
@@ -103,6 +126,7 @@ class sfOAuth2 extends sfOAuth
     {
       throw new sfException(sprintf('no access token available for "%s"', $this->getName()));
     }
+
     $this->setCallParameter('access_token', $this->getToken()->getTokenKey());
     $this->addCallParameters($params);
 

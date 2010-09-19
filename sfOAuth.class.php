@@ -71,6 +71,20 @@ abstract class sfOAuth
   protected $controller;
 
   /**
+   * the symfony logger
+   *
+   * @var sfLogger $logger
+   */
+  protected $logger;
+
+  /**
+   * the symfony context
+   *
+   * @var sfContext
+   */
+  protected $context;
+
+  /**
    * The name of the instance. used to store in the database and recognize it
    *
    * @var string $name
@@ -146,7 +160,9 @@ abstract class sfOAuth
     $this->init($config, 'access_token_url');
     $this->init($config, 'namespaces');
     $this->init($config, 'current_namespace');
+    $this->init($config, 'context');
     $this->init($config, 'controller');
+    $this->init($config, 'logger');
     $this->init($config, 'name');
     $this->init($config, 'callback');
     $this->init($config, 'auth_parameters', 'add');
@@ -485,6 +501,39 @@ abstract class sfOAuth
   }
 
   /**
+   * getter $context.
+   *
+   *
+   * @return sfContext
+   *
+   * @author Maxime Picaud
+   * @since 19 sept. 2010
+   */
+  public function getContext()
+  {
+    if(is_null($this->context) && sfContext::hasInstance())
+    {
+      $this->context = sfContext::getInstance();
+    }
+
+    return $this->context;
+  }
+
+  /**
+   *
+   * @param sfContext $context
+   *
+   * setter $context
+   *
+   * @author Maxime Picaud
+   * @since 19 sept 2010
+   */
+  public function setContext(sfContext $context)
+  {
+    $this->context = $context;
+  }
+
+  /**
    * getter $controller. If not set call to the default context
    *
    *
@@ -495,9 +544,9 @@ abstract class sfOAuth
    */
   public function getController()
   {
-    if(is_null($this->controller))
+    if(is_null($this->controller) && !is_null($this->getContext()))
     {
-      $this->controller = sfContext::getInstance()->getController();
+      $this->controller = $this->getContext()->getController();
     }
 
     return $this->controller;
@@ -515,6 +564,39 @@ abstract class sfOAuth
   public function setController(sfFrontWebController $controller)
   {
     $this->controller = $controller;
+  }
+
+  /**
+   * getter $logger
+   *
+   *
+   * @return sfLogger
+   *
+   * @author Maxime Picaud
+   * @since 19 sept 2010
+   */
+  public function getLogger()
+  {
+    if(is_null($this->logger) && !is_null($this->getContext()))
+    {
+      $this->logger = $this->getContext()->getLogger();
+    }
+
+    return $this->logger;
+  }
+
+  /**
+   *
+   * @param sfLogger $logger
+   *
+   * setter $logger
+   *
+   * @author Maxime Picaud
+   * @since 19 sept 2010
+   */
+  public function setLogger(sfLogger $logger)
+  {
+    $this->logger = $logger;
   }
 
   /**

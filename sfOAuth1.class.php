@@ -41,11 +41,11 @@ class sfOAuth1 extends sfOAuth
   {
     $this->version = 1;
 
-    parent::__construct($key, $secret, $token, $config);
-
     $this->init($config, 'request_token_url');
     $this->init($config, 'consumer');
     $this->init($config, 'request_parameters', 'add');
+
+    parent::__construct($key, $secret, $token, $config);
   }
 
   /**
@@ -129,10 +129,15 @@ class sfOAuth1 extends sfOAuth
     $oauth_token = isset($params['oauth_token'])?$params['oauth_token']:null;
     $oauth_token_secret = isset($params['oauth_token_secret'])?$params['oauth_token_secret']:null;
 
-    if(is_null($oauth_token) || is_null($oauth_token_secret))
+    if((is_null($oauth_token) || is_null($oauth_token_secret)) && $this->getLogger())
     {
       $error = sprintf('{OAuth} access token failed - %s returns %s', $this->getName(), print_r($params, true));
-      sfContext::getInstance()->getLogger()->err($error);
+      $this->getLogger()->err($error);
+    }
+    elseif($this->getLogger())
+    {
+      $message = sprintf('{OAuth} %s return %s', $this->getName(), print_r($params, true));
+      $this->getLogger()->info($message);
     }
 
     $token = new Token();
@@ -168,7 +173,26 @@ class sfOAuth1 extends sfOAuth
     {
       $this->setAuthParameter('oauth_token', $this->getToken()->getTokenKey());
       $this->addAuthParameters($parameters);
-      $this->getController()->redirect($this->getRequestAuthUrl().'?'.http_build_query($this->getAuthParameters()));
+      $url = $this->getRequestAuthUrl().'?'.http_build_query($this->getAuthParameters());
+
+      if($this->getLogger())
+      {
+        $this->getLogger()->info(sprintf('{OAuth} "%s" call url "%s" with params "%s"',
+                                         $this->getName(),
+                                         $this->getRequestAuthUrl(),
+                                         var_export($this->getAuthParameters(), true)
+                                        )
+                                 );
+      }
+
+      $this->getController()->redirect($url);
+    }
+    else
+    {
+      if($this->getLogger())
+      {
+        $this->getLogger()->err(sprintf('{OAuth} "%s" no controller to execute the request', $this->getName()));
+      }
     }
   }
 
@@ -189,10 +213,15 @@ class sfOAuth1 extends sfOAuth
     $oauth_token = isset($params['oauth_token'])?$params['oauth_token']:null;
     $oauth_token_secret = isset($params['oauth_token_secret'])?$params['oauth_token_secret']:null;
 
-    if(is_null($oauth_token) || is_null($oauth_token_secret))
+    if((is_null($oauth_token) || is_null($oauth_token_secret)) && $this->getLogger())
     {
       $error = sprintf('{OAuth} access token failed - %s returns %s', $this->getName(), print_r($params, true));
-      sfContext::getInstance()->getLogger()->err($error);
+      $this->getLogger()->err($error);
+    }
+    elseif($this->getLogger())
+    {
+      $message = sprintf('{OAuth} %s return %s', $this->getName(), print_r($params, true));
+      $this->getLogger()->info($message);
     }
 
     $token = new Token();
