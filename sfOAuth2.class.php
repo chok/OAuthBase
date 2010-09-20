@@ -114,6 +114,23 @@ class sfOAuth2 extends sfOAuth
     return $token;
   }
 
+  protected function prepareCall($action, $aliases = null, $params = array(), $method = 'GET')
+  {
+    if(is_null($this->getToken()))
+    {
+      throw new sfException(sprintf('no access token available for "%s"', $this->getName()));
+    }
+
+    $this->setCallParameter('access_token', $this->getToken()->getTokenKey());
+
+    if(in_array($method, array('GET', 'POST')))
+    {
+      $this->addCallParameters($params);
+    }
+
+    return $this->formatUrl($action, $aliases);
+  }
+
   /**
    * overriden to support OAuth 2
    *
@@ -122,23 +139,33 @@ class sfOAuth2 extends sfOAuth
    */
   public function get($action, $aliases = null, $params = array(), $method = 'GET')
   {
-    if(is_null($this->getToken()))
-    {
-      throw new sfException(sprintf('no access token available for "%s"', $this->getName()));
-    }
+    $url = $this->prepareCall($action, $aliases, $params, 'GET');
+    $response = $this->call($url, $this->getCallParameters(), 'GET');
 
-    $this->setCallParameter('access_token', $this->getToken()->getTokenKey());
-    $this->addCallParameters($params);
+    return $this->formatResult($response);
+  }
 
-    $url = parent::get($action, $aliases, $this->getCallParameters(), $method);
+  public function post($action, $aliases = null, $params = array())
+  {
+    $url = $this->prepareCall($action, $aliases, $params, 'POST');
+    $response = $this->call($url, $this->getCallParameters(), 'POST');
 
-    $response = $this->call($url, $this->getCallParameters(), $method);
+    return $this->formatResult($response);
+  }
 
-    if($this->getOutputFormat() == 'json')
-    {
-      $response = json_decode($response);
-    }
+  public function put($action, $aliases = null, $params = null)
+  {
+    $url = $this->prepareCall($action, $aliases, $params, 'PUT');
+    $response = $this->call($url, $this->getCallParameters(), $params, 'PUT');
 
-    return $response;
+    return $this->formatResult($response);
+  }
+
+  public function delete($action, $aliases = null, $params = array())
+  {
+    $url = $this->prepareCall($action, $aliases, $params, 'DELETE');
+    $response = $this->call($url, $this->getCallParameters(), $params, 'DELETE');
+
+    return $this->formatResult($response);
   }
 }
