@@ -264,7 +264,7 @@ class sfOAuth1 extends sfOAuth
     $request = OAuthRequest::from_consumer_and_token($this->getConsumer(), $this->getToken('oauth'), $method, $url, $this->getCallParameters());
     $request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $this->getConsumer(), $this->getToken('oauth'));
 
-    return $request;
+    return array($url, $request);
   }
 
   /**
@@ -275,7 +275,7 @@ class sfOAuth1 extends sfOAuth
    */
   public function get($action, $aliases = null, $params = array())
   {
-    $request = $this->prepareCall($action, $aliases, $params, 'GET');
+    list($url, $request) = $this->prepareCall($action, $aliases, $params, 'GET');
     $response = $this->call($request->to_url(), null, null, 'GET');
 
     return $this->formatResult($response);
@@ -283,7 +283,7 @@ class sfOAuth1 extends sfOAuth
 
   public function post($action, $aliases = null, $params = array())
   {
-    $request = $this->prepareCall($action, $aliases, $params, 'POST');
+    list($url, $request) = $this->prepareCall($action, $aliases, $params, 'POST');
     $this->setCallParameters($request->to_postdata());
     $response = $this->call($url, $this->getCallParameters(), null, 'POST');
 
@@ -292,7 +292,7 @@ class sfOAuth1 extends sfOAuth
 
   public function put($action, $aliases = null, $params = array())
   {
-    $request = $this->prepareCall($action, $aliases, $params, 'PUT');
+    list($url, $request) = $this->prepareCall($action, $aliases, $params, 'PUT');
     $this->setCallParameters($request->to_postdata());
     $response = $this->call($url, $this->getCallParameters(), $params, 'PUT');
 
@@ -301,7 +301,7 @@ class sfOAuth1 extends sfOAuth
 
   public function delete($action, $aliases = null, $params = array())
   {
-    $request = $this->prepareCall($action, $aliases, $params, 'DELETE');
+    list($url, $request) = $this->prepareCall($action, $aliases, $params, 'DELETE');
     $this->setCallParameters($request->to_postdata());
     $response = $this->call($url, $this->getCallParameters(), $params, 'DELETE');
 
