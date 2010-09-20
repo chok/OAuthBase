@@ -1133,7 +1133,7 @@ abstract class sfOAuth
 
     if(in_array($method, array('PUT', 'DELETE')))
     {
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+      curl_setopt($ci, CURLOPT_CUSTOMREQUEST, $method);
     }
     elseif($method == 'POST')
     {
