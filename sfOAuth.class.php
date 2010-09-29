@@ -878,7 +878,14 @@ abstract class sfOAuth
   {
     if(is_array($parameters))
     {
-      $this->call_parameters = array_merge($this->call_parameters, $parameters);
+      if(is_array($this->call_parameters))
+      {
+        $this->call_parameters = array_merge($this->call_parameters, $parameters);
+      }
+      else
+      {
+        $this->setCallParameters($parameters);
+      }
     }
   }
 
@@ -1161,6 +1168,12 @@ abstract class sfOAuth
     curl_setopt($ci, CURLOPT_HEADER, false);
     curl_setopt($ci, CURLOPT_URL, $url);
     curl_setopt($ci, CURLOPT_RETURNTRANSFER, true);
+
+    if($this->getLogger())
+    {
+      $message = sprintf('{OAuth} call %s with params %s | %s', $url, $url_params, $post_params);
+      $this->getLogger()->info($message);
+    }
 
     $response = curl_exec($ci);
     curl_close ($ci);

@@ -140,7 +140,7 @@ class sfOAuth2 extends sfOAuth
   public function get($action, $aliases = null, $params = array(), $method = 'GET')
   {
     $url = $this->prepareCall($action, $aliases, $params, 'GET');
-    $response = $this->call($url, $this->getCallParameters(), 'GET');
+    $response = $this->call($url, $this->getCallParameters(), null, 'GET');
 
     return $this->formatResult($response);
   }
@@ -148,7 +148,7 @@ class sfOAuth2 extends sfOAuth
   public function post($action, $aliases = null, $params = array())
   {
     $url = $this->prepareCall($action, $aliases, $params, 'POST');
-    $response = $this->call($url, $this->getCallParameters(), 'POST');
+    $response = $this->call($url, $this->getCallParameters(), null, 'POST');
 
     return $this->formatResult($response);
   }
