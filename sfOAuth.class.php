@@ -1034,7 +1034,7 @@ abstract class sfOAuth
     $this->namespaces = array_merge($this->namespaces, $namespaces);
   }
 
-  /**
+	/**
    *
    * @param string $url
    * @param array $params
@@ -1045,53 +1045,71 @@ abstract class sfOAuth
    * @author Maxime Picaud
    * @since 21 août 2010
    */
-  protected function call($url, $params = array(), $method = 'POST', $headers = array())
+  protected function call($url, $url_params = null, $post_params = null, $method = 'POST')
   {
     $ci = curl_init();
 
-    if ($this->getVersion() == 1.5)
+    if ($this->getVersion() == 1.5 && isset($url_params['access_token']))
     {
-      $headers = array('Accept: application/json', 'Authorization: WRAP access_token='.$params['access_token']);
+      $headers = array('Accept: application/json', 'Authorization: WRAP access_token='.$url_params['access_token']);
       curl_setopt($ci, CURLOPT_HTTPHEADER, $headers);
       $this->getLogger()->info(sprintf('{OAuth} headers "%s"',
                                          print_r($headers, true)
                                         )
                                  );
-      unset($params['access_token'], $params['format']);
+      unset($url_params['access_token'], $url_params['format']);
     }
 
-    if($method == 'POST')
+    if(is_array($url_params) && count($url_params) > 0)
+    {
+      $url_params = http_build_query($url_params);
+    }
+
+    if(in_array($method, array('PUT', 'DELETE')))
+    {
+      curl_setopt($ci, CURLOPT_CUSTOMREQUEST, $method);
+    }
+    elseif($method == 'POST')
     {
       curl_setopt($ci, CURLOPT_POST, true);
-      curl_setopt($ci, CURLOPT_POSTFIELDS, $params);
     }
-    elseif($method == 'GET' && count($params) > 0)
+    elseif($method == 'GET' && !empty($url_params))
     {
-      $params = http_build_query($params);
-      if(strpos($url, '?') !== false)
+      $url = $this->appendToUrl($url, $url_params);
+    }
+
+    if(in_array($method, array('PUT', 'DELETE', 'POST')))
+    {
+      if(!is_null($post_params))
       {
-        $url .= '&'.$params;
+        $url = $this->appendToUrl($url, $url_params);
+        curl_setopt($ci, CURLOPT_POSTFIELDS, $post_params);
       }
       else
       {
-        $url .= '?'.$params;
+        curl_setopt($ci, CURLOPT_POSTFIELDS, $url_params);
       }
+
     }
 
     curl_setopt($ci, CURLOPT_HEADER, false);
     curl_setopt($ci, CURLOPT_URL, $url);
-    curl_setopt($ci,CURLOPT_RETURNTRANSFER,true);
+    curl_setopt($ci, CURLOPT_RETURNTRANSFER, true);
 
     $response = curl_exec($ci);
     curl_close ($ci);
 
-    $this->getLogger()->info(sprintf('{OAuth} call url "%s" with params "%s" by method "%s" give response "%s"',
+    if($this->getLogger())
+    {
+      $this->getLogger()->info(sprintf('{OAuth} call url "%s" with params "%s" post "%s" by method "%s" give response "%s"',
                                          $url,
-                                         $params,
+                                         $url_params,
+                                         $post_params,
                                          $method,
                                          $response
                                         )
                                  );
+    }
 
     return $response;
   }
@@ -1178,69 +1196,6 @@ abstract class sfOAuth
       return call_user_func_array($callable, $arguments);
     }
     else throw new sfException(sprintf('method "%s" does not exists in "%s" class', $callable[1], get_class($this)));
-  }
-
-  /**
-   *
-   * @param string $url
-   * @param array $params
-   * @param string $method
-   *
-   * call REST Api
-   *
-   * @author Maxime Picaud
-   * @since 21 août 2010
-   */
-  protected function call($url, $url_params = null, $post_params = null, $method = 'POST')
-  {
-    $ci = curl_init();
-
-    if(is_array($url_params) && count($url_params) > 0)
-    {
-      $url_params = http_build_query($url_params);
-    }
-
-    if(in_array($method, array('PUT', 'DELETE')))
-    {
-      curl_setopt($ci, CURLOPT_CUSTOMREQUEST, $method);
-    }
-    elseif($method == 'POST')
-    {
-      curl_setopt($ci, CURLOPT_POST, true);
-    }
-    elseif($method == 'GET' && !empty($url_params))
-    {
-      $url = $this->appendToUrl($url, $url_params);
-    }
-
-    if(in_array($method, array('PUT', 'DELETE', 'POST')))
-    {
-      if(!is_null($post_params))
-      {
-        $url = $this->appendToUrl($url, $url_params);
-        curl_setopt($ci, CURLOPT_POSTFIELDS, $post_params);
-      }
-      else
-      {
-        curl_setopt($ci, CURLOPT_POSTFIELDS, $url_params);
-      }
-
-    }
-
-    curl_setopt($ci, CURLOPT_HEADER, false);
-    curl_setopt($ci, CURLOPT_URL, $url);
-    curl_setopt($ci, CURLOPT_RETURNTRANSFER, true);
-
-    if($this->getLogger())
-    {
-      $message = sprintf('{OAuth} call %s with params %s | %s', $url, $url_params, $post_params);
-      $this->getLogger()->info($message);
-    }
-
-    $response = curl_exec($ci);
-    curl_close ($ci);
-
-    return $response;
   }
 
   protected function appendToUrl($url, $params)

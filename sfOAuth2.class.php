@@ -72,7 +72,7 @@ class sfOAuth2 extends sfOAuth
 
     $this->addAccessParameters($parameters);
 
-    $params = $this->call($url, $this->getAccessParameters(), 'GET');
+    $params = $this->call($url, $this->getAccessParameters(), null, 'GET');
 
     $params = OAuthUtil::parse_parameters($params);
 
