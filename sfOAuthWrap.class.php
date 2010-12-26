@@ -1,0 +1,144 @@
+<?php
+/**
+ *
+ *
+ *
+ * Implementation for OAuth version 2
+ *
+ * @author Maxime Picaud
+ * @since 21 août 2010
+ */
+class sfOAuthWrap extends sfOAuth
+{
+  /**
+   * Constructor - set version to 2
+   *
+   * @author Maxime Picaud
+   * @since 21 août 2010
+   */
+  public function __construct($key, $secret, $token = null, $config = array())
+  {
+    $this->version = 1.5;
+
+    parent::__construct($key, $secret, $token, $config);
+  }
+
+  /**
+   * (non-PHPdoc)
+   * @see plugins/sfDoctrineOAuthPlugin/lib/sfOAuth::requestAuth()
+   */
+  public function requestAuth($parameters = array())
+  {
+    if($this->getController())
+    {
+      $this->setAuthParameter('wrap_client_id', $this->getKey());
+      $this->setAuthParameter('wrap_callback', $this->getCallback());
+      $this->addAuthParameters($parameters);
+      $url = $this->getRequestAuthUrl().'?'.http_build_query($this->getAuthParameters());
+
+      if($this->getLogger())
+      {
+        $this->getLogger()->info(sprintf('{OAuth} "%s" call url "%s" with params "%s"',
+                                         $this->getName(),
+                                         $this->getRequestAuthUrl(),
+                                         var_export($this->getAuthParameters(), true)
+                                        )
+                                 );
+      }
+
+      $this->getController()->redirect($url);
+    }
+    else
+    {
+      if($this->getLogger())
+      {
+        $this->getLogger()->err(sprintf('{OAuth} "%s" no controller to execute the request', $this->getName()));
+      }
+    }
+  }
+
+  /**
+   * (non-PHPdoc)
+   * @see plugins/sfDoctrineOAuthPlugin/lib/sfOAuth::getAccessToken()
+   */
+  public function getAccessToken($verifier, $parameters = array())
+  {
+    $url = $this->getAccessTokenUrl();
+
+    $this->setAccessParameter('wrap_client_id', $this->getKey());
+    $this->setAccessParameter('wrap_client_secret', $this->getSecret());
+    $this->setAccessParameter('wrap_callback', $this->getCallback());
+    $this->setAccessParameter('wrap_verification_code', $verifier);
+
+    $this->addAccessParameters($parameters);
+
+    $params = $this->call($url, $this->getAccessParameters(), 'POST');
+
+    $params = OAuthUtil::parse_parameters($params);
+
+    $access_token = isset($params['wrap_access_token'])?$params['wrap_access_token']:null;
+
+    if(is_null($access_token) && $this->getLogger())
+    {
+      $error = sprintf('{OAuth} access token failed - %s returns %s', $this->getName(), print_r($params, true));
+      $this->getLogger()->err($error);
+    }
+    elseif($this->getLogger())
+    {
+      $message = sprintf('{OAuth} %s return %s', $this->getName(), print_r($params, true));
+      $this->getLogger()->info($message);
+    }
+
+    $token = new Token();
+    $token->setTokenKey($access_token);
+    $token->setName($this->getName());
+    $token->setStatus(Token::STATUS_ACCESS);
+    $token->setOAuthVersion($this->getVersion());
+
+    unset($params['wrap_access_token']);
+
+    if(count($params) > 0)
+    {
+      $token->setParams($params);
+    }
+
+    $this->setExpire($token);
+
+    $this->setToken($token);
+
+    // get identifier maybe need the access token
+    $token->setIdentifier($this->getIdentifier());
+
+    $this->setToken($token);
+
+    return $token;
+  }
+
+  /**
+   * overriden to support OAuth 2
+   *
+   * @author Maxime Picaud
+   * @since 19 août 2010
+   */
+  public function get($action, $aliases = null, $params = array(), $method = 'GET')
+  {
+    if(is_null($this->getToken()))
+    {
+      throw new sfException(sprintf('no access token available for "%s"', $this->getName()));
+    }
+
+    $this->setCallParameter('access_token', $this->getToken()->getTokenKey());
+    $this->addCallParameters($params);
+
+    $url = parent::get($action, $aliases, $this->getCallParameters(), $method);
+
+    $response = $this->call($url, $this->getCallParameters(), $method);
+
+    if($this->getOutputFormat() == 'json')
+    {
+      $response = json_decode($response);
+    }
+
+    return $response;
+  }
+}

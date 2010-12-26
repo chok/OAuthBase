@@ -1038,9 +1038,20 @@ abstract class sfOAuth
    * @author Maxime Picaud
    * @since 21 août 2010
    */
-  protected function call($url, $params = array(), $method = 'POST')
+  protected function call($url, $params = array(), $method = 'POST', $headers = array())
   {
     $ci = curl_init();
+
+    if ($this->getVersion() == 1.5)
+    {
+      $headers = array('Accept: application/json', 'Authorization: WRAP access_token='.$params['access_token']);
+      curl_setopt($ci, CURLOPT_HTTPHEADER, $headers);
+      $this->getLogger()->info(sprintf('{OAuth} headers "%s"',
+                                         print_r($headers, true)
+                                        )
+                                 );
+      unset($params['access_token'], $params['format']);
+    }
 
     if($method == 'POST')
     {
@@ -1066,6 +1077,14 @@ abstract class sfOAuth
 
     $response = curl_exec($ci);
     curl_close ($ci);
+
+    $this->getLogger()->info(sprintf('{OAuth} call url "%s" with params "%s" by method "%s" give response "%s"',
+                                         $url,
+                                         $params,
+                                         $method,
+                                         $response
+                                        )
+                                 );
 
     return $response;
   }
