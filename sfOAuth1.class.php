@@ -248,40 +248,64 @@ class sfOAuth1 extends sfOAuth
     return $token;
   }
 
+  protected function prepareCall($action, $aliases = null, $params = array(), $method = 'GET')
+  {
+    if(in_array($method, array('GET', 'POST')))
+    {
+      $this->addCallParameters($params);
+    }
+    else
+    {
+      $method = 'POST';
+    }
+
+    $url = $this->formatUrl($action, $aliases);
+
+    $request = OAuthRequest::from_consumer_and_token($this->getConsumer(), $this->getToken('oauth'), $method, $url, $this->getCallParameters());
+    $request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $this->getConsumer(), $this->getToken('oauth'));
+
+    return array($url, $request);
+  }
+
   /**
    * overriden for OAuth 1
    *
    * @author Maxime Picaud
    * @since 19 août 2010
    */
-  public function get($action,$aliases = null, $params = array(), $method = 'GET')
+  public function get($action, $aliases = null, $params = array())
   {
-    $this->addCallParameters($params);
+    list($url, $request) = $this->prepareCall($action, $aliases, $params, 'GET');
+    $response = $this->call($request->to_url(), null, null, 'GET');
 
-    $url = parent::get($action, $aliases, $this->getCallParameters(), $method);
+    return $this->formatResult($response);
+  }
 
+  public function post($action, $aliases = null, $params = array())
+  {
+    list($url, $request) = $this->prepareCall($action, $aliases, $params, 'POST');
+    $this->setCallParameters($request->to_postdata());
+    $response = $this->call($url, $this->getCallParameters(), null, 'POST');
 
-    $request = OAuthRequest::from_consumer_and_token($this->getConsumer(), $this->getToken('oauth'), $method, $url, $this->getCallParameters());
-    $request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $this->getConsumer(), $this->getToken('oauth'));
+    return $this->formatResult($response);
+  }
 
-    if($method == 'GET')
-    {
-      $url = $request->to_url();
-      $this->setCallParameters(array());
-    }
-    elseif($method == 'POST')
-    {
-      $this->setCallParameters($request->to_postdata());
-    }
+  public function put($action, $aliases = null, $params = array())
+  {
+    list($url, $request) = $this->prepareCall($action, $aliases, $params, 'PUT');
+    $this->setCallParameters($request->to_postdata());
+    $response = $this->call($url, $this->getCallParameters(), $params, 'PUT');
 
-    $response = $this->call($url, $this->getCallParameters(), $method);
+    return $this->formatResult($response);
+  }
 
-    if($this->getOutputFormat() == 'json')
-    {
-      $response = json_decode($response);
-    }
+  public function delete($action, $aliases = null, $params = array())
+  {
+    list($url, $request) = $this->prepareCall($action, $aliases, $params, 'DELETE');
+    $this->setCallParameters($request->to_postdata());
+    $response = $this->call($url, $this->getCallParameters(), $params, 'DELETE');
 
-    return $response;
+    return $this->formatResult($response);
   }
 
   /**

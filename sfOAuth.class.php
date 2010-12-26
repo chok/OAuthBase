@@ -878,7 +878,14 @@ abstract class sfOAuth
   {
     if(is_array($parameters))
     {
-      $this->call_parameters = array_merge($this->call_parameters, $parameters);
+      if(is_array($this->call_parameters))
+      {
+        $this->call_parameters = array_merge($this->call_parameters, $parameters);
+      }
+      else
+      {
+        $this->setCallParameters($parameters);
+      }
     }
   }
 
@@ -1139,7 +1146,7 @@ abstract class sfOAuth
    * @author Maxime Picaud
    * @since 21 août 2010
    */
-  public function applyUrlParams($url, $aliases)
+  public function applyUrlAliases($url, $aliases)
   {
     foreach($aliases as $key => $alias)
     {
@@ -1175,17 +1182,92 @@ abstract class sfOAuth
 
   /**
    *
-   * @param string $action
-   * @param array $url_params
+   * @param string $url
    * @param array $params
    * @param string $method
    *
-   * make api call
+   * call REST Api
    *
    * @author Maxime Picaud
    * @since 21 août 2010
    */
-  public function get($action, $aliases = null, $parameters = array(), $method = 'GET')
+  protected function call($url, $url_params = null, $post_params = null, $method = 'POST')
+  {
+    $ci = curl_init();
+
+    if(is_array($url_params) && count($url_params) > 0)
+    {
+      $url_params = http_build_query($url_params);
+    }
+
+    if(in_array($method, array('PUT', 'DELETE')))
+    {
+      curl_setopt($ci, CURLOPT_CUSTOMREQUEST, $method);
+    }
+    elseif($method == 'POST')
+    {
+      curl_setopt($ci, CURLOPT_POST, true);
+    }
+    elseif($method == 'GET' && !empty($url_params))
+    {
+      $url = $this->appendToUrl($url, $url_params);
+    }
+
+    if(in_array($method, array('PUT', 'DELETE', 'POST')))
+    {
+      if(!is_null($post_params))
+      {
+        $url = $this->appendToUrl($url, $url_params);
+        curl_setopt($ci, CURLOPT_POSTFIELDS, $post_params);
+      }
+      else
+      {
+        curl_setopt($ci, CURLOPT_POSTFIELDS, $url_params);
+      }
+
+    }
+
+    curl_setopt($ci, CURLOPT_HEADER, false);
+    curl_setopt($ci, CURLOPT_URL, $url);
+    curl_setopt($ci, CURLOPT_RETURNTRANSFER, true);
+
+    if($this->getLogger())
+    {
+      $message = sprintf('{OAuth} call %s with params %s | %s', $url, $url_params, $post_params);
+      $this->getLogger()->info($message);
+    }
+
+    $response = curl_exec($ci);
+    curl_close ($ci);
+
+    return $response;
+  }
+
+  protected function appendToUrl($url, $params)
+  {
+    if(strpos($url, '?') !== false)
+    {
+      $url .= '&'.$params;
+    }
+    else
+    {
+      $url .= '?'.$params;
+    }
+
+    return $url;
+  }
+
+  protected function formatResult($response)
+  {
+    if($this->getOutputFormat() == 'json')
+    {
+      $response = json_decode($response);
+    }
+
+    return $response;
+  }
+
+  protected function formatUrl($action, $aliases = null)
   {
     if(is_null($this->getToken()))
     {
@@ -1210,10 +1292,40 @@ abstract class sfOAuth
       $aliases = $this->getAliases();
     }
 
-    return $this->applyUrlParams($url, $aliases);
+    return $this->applyUrlAliases($url, $aliases);
   }
 
-  public function fromPath($result, $path)
+  /**
+   *
+   * @param string $action
+   * @param array $url_params
+   * @param array $params
+   * @param string $method
+   *
+   * make api call
+   *
+   * @author Maxime Picaud
+   * @since 21 août 2010
+   */
+  abstract public function get($action, $aliases = null, $parameters = array());
+  abstract public function post($action, $aliases = null, $parameters = array());
+  abstract public function put($action, $aliases = null, $parameters = array());
+  abstract public function delete($action, $aliases = null, $parameters = array());
+
+  abstract protected function prepareCall($action, $aliases = null, $params = array(), $method = 'GET');
+
+  /**
+   *
+   * @param mixed $result
+   * @param string $path
+   * @param mixed $default
+   *
+   * Allow to retrieve result from a path
+   *
+   * @author Maxime Picaud
+   * @since 20 sept. 2010
+   */
+  public function fromPath($result, $path, $default = null)
   {
     $fields = explode('.', $path);
 
@@ -1236,13 +1348,13 @@ abstract class sfOAuth
         }
         else
         {
-          $result = null;
+          $result = $default;
           break;
         }
       }
       else
       {
-        $result = null;
+        $result = $default;
         break;
       }
     }
