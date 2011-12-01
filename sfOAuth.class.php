@@ -1095,6 +1095,10 @@ abstract class sfOAuth
     curl_setopt($ci, CURLOPT_HEADER, false);
     curl_setopt($ci, CURLOPT_URL, $url);
     curl_setopt($ci, CURLOPT_RETURNTRANSFER, true);
+    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') 
+    {
+        curl_setopt($ci, CURLOPT_CAINFO, dirname(__FILE__) . '/cacert.crt'); 
+    }
 
     $response = curl_exec($ci);
     curl_close ($ci);
