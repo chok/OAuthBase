@@ -1107,9 +1107,6 @@ abstract class sfOAuth
         {
             $this->getLogger()->err($cerror);
         }
-    {
-
-    }
     }
     curl_close ($ci);
 
