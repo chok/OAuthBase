@@ -76,9 +76,12 @@ class sfOAuth2 extends sfOAuth
 
     // for "vk.com"
     $newParams = json_decode($params, true);
-    if ($newParams !== null) {
+    if ($newParams !== null)
+	 {
       $params = $newParams;
-    } else {
+    }
+	 else
+	 {
       $params = OAuthUtil::parse_parameters($params);
     }
 
