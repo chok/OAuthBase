@@ -74,7 +74,13 @@ class sfOAuth2 extends sfOAuth
 
     $params = $this->call($url, $this->getAccessParameters(), null, 'GET');
 
-    $params = OAuthUtil::parse_parameters($params);
+    // for "vk.com"
+    $newParams = json_decode($params, true);
+    if ($newParams !== null) {
+      $params = $newParams;
+    } else {
+      $params = OAuthUtil::parse_parameters($params);
+    }
 
     $access_token = isset($params['access_token'])?$params['access_token']:null;
 
